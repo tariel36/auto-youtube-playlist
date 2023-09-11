@@ -35,5 +35,8 @@ static async Task CreateNewPlaylist(IServiceProvider hostProvider)
 
     string url = await playlistService.TriggerPlaylistCreation();
 
-    Process.Start(new ProcessStartInfo(configuration[ConfigurationKeys.BrowserPath], url));
+    if (string.Equals(configuration[ConfigurationKeys.OpenPlaylist], "1"))
+    {
+        Process.Start(new ProcessStartInfo(configuration[ConfigurationKeys.BrowserPath], url));
+    }
 }

@@ -6,5 +6,6 @@
         public const string YouTubeUser = nameof(YouTubeUser);
         public const string BrowserPath = nameof(BrowserPath);
         public const string ClientSecretsFilePath = nameof(ClientSecretsFilePath);
+        public const string OpenPlaylist = nameof(OpenPlaylist);
     }
 }
