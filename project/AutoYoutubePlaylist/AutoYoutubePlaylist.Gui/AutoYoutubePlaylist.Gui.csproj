@@ -7,4 +7,16 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Page Remove="Features\EntryPoint\App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AutoYoutubePlaylist.Logic\AutoYoutubePlaylist.Logic.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ApplicationDefinition Include="Features\EntryPoint\App.xaml" />
+  </ItemGroup>
+
 </Project>
