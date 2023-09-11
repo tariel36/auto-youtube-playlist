@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoYoutubePlaylist.Logic",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoYoutubePlaylist.Console", "AutoYoutubePlaylist.Console\AutoYoutubePlaylist.Console.csproj", "{FC3D499A-3E16-4E70-BAC6-E84C1A201FDB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoYoutubePlaylist.Gui", "AutoYoutubePlaylist.Gui\AutoYoutubePlaylist.Gui.csproj", "{31DE49D6-6C68-4B50-A581-2BFF5D2876A4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{FC3D499A-3E16-4E70-BAC6-E84C1A201FDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FC3D499A-3E16-4E70-BAC6-E84C1A201FDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FC3D499A-3E16-4E70-BAC6-E84C1A201FDB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31DE49D6-6C68-4B50-A581-2BFF5D2876A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31DE49D6-6C68-4B50-A581-2BFF5D2876A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31DE49D6-6C68-4B50-A581-2BFF5D2876A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31DE49D6-6C68-4B50-A581-2BFF5D2876A4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
