@@ -271,3 +271,4 @@ project/AutoYoutubePlaylist/AutoYoutubePlaylist.Logic/appsettings.json
 project/AutoYoutubePlaylist/AutoYoutubePlaylist.Service/db.bin
 project/AutoYoutubePlaylist/AutoYoutubePlaylist.Service/db-log.bin
 project/AutoYoutubePlaylist/AutoYoutubePlaylist.Service/appsettings.json
+project/AutoYoutubePlaylist/AutoYoutubePlaylist.Gui/appsettings.json
