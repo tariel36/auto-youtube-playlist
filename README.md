@@ -39,4 +39,4 @@ The `appsettings.json` file.
 
 ## License
 
-MTI
+MIT
