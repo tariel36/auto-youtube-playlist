@@ -19,5 +19,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Models
         public DateTime CreationDate { get; set; }
 
         public string Name { get; set; }
+
+        public bool Opened { get; set; }
     }
 }

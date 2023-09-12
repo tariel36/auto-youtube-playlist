@@ -1,7 +1,9 @@
-﻿namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
+﻿using AutoYoutubePlaylist.Logic.Features.YouTube.Models;
+
+namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 {
     public interface IYouTubeService
     {
-        Task<string> CreateNewPlaylist();
+        Task<YouTubePlaylist> CreateNewPlaylist();
     }
 }

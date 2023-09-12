@@ -12,6 +12,6 @@ namespace AutoYoutubePlaylist.Logic.Features.Playlists.Services
 
         Task<YouTubePlaylist> GetLatestPlaylist();
 
-        Task<string> TriggerPlaylistCreation();
+        Task<YouTubePlaylist> TriggerPlaylistCreation();
     }
 }

@@ -3,6 +3,7 @@ using AutoYoutubePlaylist.Logic.Features.Chrono.Providers;
 using AutoYoutubePlaylist.Logic.Features.Configuration;
 using AutoYoutubePlaylist.Logic.Features.Database.Services;
 using AutoYoutubePlaylist.Logic.Features.Playlists.Services;
+using AutoYoutubePlaylist.Logic.Features.YouTube.Models;
 using AutoYoutubePlaylist.Logic.Features.YouTube.Providers;
 using AutoYoutubePlaylist.Logic.Features.YouTube.Services;
 using Microsoft.Extensions.Configuration;
@@ -30,13 +31,28 @@ static async Task CreateNewPlaylist(IServiceProvider hostProvider)
 
     IServiceProvider provider = serviceScope.ServiceProvider;
 
+    ILogger logger = provider.GetRequiredService<ILogger<Program>>();
+
+    logger.LogDebug($"Preparing services");
+
     IPlaylistService playlistService = provider.GetRequiredService<IPlaylistService>();
     IConfiguration configuration = provider.GetRequiredService<IConfiguration>();
+    IDatabaseService database = provider.GetRequiredService<IDatabaseService>();
 
-    string url = await playlistService.TriggerPlaylistCreation();
+    logger.LogDebug($"Starting playlist creation");
 
-    if (string.Equals(configuration[ConfigurationKeys.OpenPlaylist], "1"))
+    YouTubePlaylist playlist = await playlistService.TriggerPlaylistCreation();
+
+    logger.LogDebug($"Retrived playlist: '{playlist?.Name}' - '{playlist?.Url}' - '{playlist?.Opened}'");
+
+    logger.LogDebug($"Should open new playlists (configuration): '{configuration[ConfigurationKeys.OpenPlaylist]}'");
+
+    if (playlist?.Opened == false && string.Equals(configuration[ConfigurationKeys.OpenPlaylist], "1"))
     {
-        Process.Start(new ProcessStartInfo(configuration[ConfigurationKeys.BrowserPath], url));
+        playlist.Opened = true;
+        
+        await database.Update(playlist);
+
+        Process.Start(new ProcessStartInfo(configuration[ConfigurationKeys.BrowserPath], playlist.FirstVideoUrl));
     }
 }

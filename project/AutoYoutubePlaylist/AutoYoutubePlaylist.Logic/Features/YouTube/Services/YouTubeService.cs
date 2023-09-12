@@ -31,14 +31,22 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             _dateTimeProvider = dateTimeProvider ?? throw new ArgumentNullException(nameof(dateTimeProvider));
         }
 
-        public async Task<string> CreateNewPlaylist()
+        public async Task<YouTubePlaylist> CreateNewPlaylist()
         {
+            _logger.LogDebug("Getting new videos...");
+
             ICollection<YouTubeVideo> newVideos = await GetNewVideos();
+
+            _logger.LogDebug($"New videos: '${newVideos?.Count}'"); ;
 
             if (!(newVideos?.Count > 0))
             {
-                return string.Empty;
+                _logger.LogWarning($"No videos, returning null.");
+
+                return null;
             }
+
+            _logger.LogDebug("Creating YT credentials");
 
             string secretsFilePath = _configuration[ConfigurationKeys.ClientSecretsFilePath];
 
@@ -74,6 +82,8 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                 throw new InvalidOperationException("An error occured when trying to use authorize into Google. Try to change default webbrowser that has no logged in YT User and try again", ex);
             }
 
+            _logger.LogDebug("Creating new playlist");
+
             bool youtubeErrorOccured = false;
 
             Playlist newPlaylist = null;
@@ -98,12 +108,18 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                 _logger.LogError(ex, "YouTube Error");
             }
 
+            _logger.LogDebug("Adding videos to playlist");
+
             foreach (YouTubeVideo video in newVideos)
             {
+                _logger.LogDebug($"Processing - '{video.Link}'");
+
                 if (!youtubeErrorOccured)
                 {
                     try
                     {
+                        _logger.LogDebug($"Adding video to playlist - '{video.Link}'");
+
                         await youtubeService.PlaylistItems.Insert(new PlaylistItem()
                         {
                             Snippet = new PlaylistItemSnippet()
@@ -120,9 +136,11 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                     catch (Exception ex)
                     {
                         youtubeErrorOccured = true;
-                        _logger.LogError(ex, "YouTube Error");
+                        _logger.LogError(ex, "YouTube Error - New videos will be added to database, but not to playlist");
                     }
                 }
+
+                _logger.LogDebug($"Adding video to database - '{video.Link}'");
 
                 await _databaseService.Insert(new YouTubeVideo()
                 {
@@ -133,21 +151,29 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 
             if (newPlaylist == null)
             {
-                return string.Empty;
+                _logger.LogWarning($"No playlist object, returning null.");
+
+                return null;
             }
+
+            _logger.LogDebug($"Adding playlist to database...");
 
             string playlistUrl = $"https://www.youtube.com/playlist?list={newPlaylist.Id}";
             string firstVideoUrl = $"https://www.youtube.com/watch?v={newVideos.First().YouTubeId}&list={newPlaylist.Id}&index=1";
 
-            await _databaseService.Insert(new YouTubePlaylist()
+            YouTubePlaylist youtubePlaylist = new YouTubePlaylist()
             {
                 Url = playlistUrl,
                 CreationDate = utcNow,
                 Name = newPlaylist.Snippet.Title,
                 FirstVideoUrl = firstVideoUrl
-            });
+            };
 
-            return firstVideoUrl;
+            await _databaseService.Insert(youtubePlaylist);
+
+            _logger.LogDebug($"Returning...");
+
+            return youtubePlaylist;
         }
 
         private async Task<YouTubeChannel> GetRecentChannelStatus(string channelRssUrl)
