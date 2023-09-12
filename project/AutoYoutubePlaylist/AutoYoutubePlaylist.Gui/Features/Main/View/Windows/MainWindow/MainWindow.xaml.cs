@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,7 +24,7 @@ namespace AutoYoutubePlaylist.Gui
         {
             InitializeComponent();
 
-            _databaseService = new DatabaseService(null);
+            _databaseService = new DatabaseService(Features.EntryPoint.App.Configuration);
         }
 
         private async void BtnAddChannels_Click(object sender, RoutedEventArgs args)
@@ -52,22 +53,23 @@ namespace AutoYoutubePlaylist.Gui
 
         private async void BtnRefreshUrls_Click(object sender, RoutedEventArgs args)
         {
-            await RefreshData<YouTubeRssUrl>(DgrUrls);
+            await RefreshData<YouTubeRssUrl>(DgrUrls, LblRefreshUrlsCount);
         }
 
         private async void BtnRefreshVideos_Click(object sender, RoutedEventArgs args)
         {
-            await RefreshData<YouTubeVideo>(DgrUrls);
+            await RefreshData<YouTubeVideo>(DgrVideos, LblRefreshVideosCount);
         }
 
         private async void BtnRefreshPlaylists_Click(object sender, RoutedEventArgs args)
         {
-            await RefreshData<YouTubePlaylist>(DgrUrls);
+            await RefreshData<YouTubePlaylist>(DgrPlaylists, LblRefreshPlaylistsCount);
         }
 
-        private async Task RefreshData<TModel>(DataGrid dgr) where TModel : IDatabaseEntity
+        private async Task RefreshData<TModel>(DataGrid dgr, Label lbl) where TModel : IDatabaseEntity
         {
             dgr.ItemsSource = (await _databaseService.GetAll<TModel>()).Select(x => JsonConvert.SerializeObject(x)).Select(x => new DataItem(x)).ToList();
+            lbl.Content = (dgr.ItemsSource as ICollection)?.Count ?? 0;
         }
     }
 }

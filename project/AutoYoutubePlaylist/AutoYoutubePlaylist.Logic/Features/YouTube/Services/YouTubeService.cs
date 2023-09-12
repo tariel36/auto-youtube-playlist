@@ -74,38 +74,66 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                 throw new InvalidOperationException("An error occured when trying to use authorize into Google. Try to change default webbrowser that has no logged in YT User and try again", ex);
             }
 
-            Playlist newPlaylist = await youtubeService.Playlists.Insert(new Playlist()
+            bool youtubeErrorOccured = false;
+
+            Playlist newPlaylist = null;
+
+            try
             {
-                Snippet = new PlaylistSnippet()
+                newPlaylist = await youtubeService.Playlists.Insert(new Playlist()
                 {
-                    Title = _playlistNameProvider.GetName(),
-                },
-                Status = new PlaylistStatus()
-                {
-                    PrivacyStatus = "unlisted"
-                }
-            }, "snippet,status").ExecuteAsync();
+                    Snippet = new PlaylistSnippet()
+                    {
+                        Title = _playlistNameProvider.GetName(),
+                    },
+                    Status = new PlaylistStatus()
+                    {
+                        PrivacyStatus = "unlisted"
+                    }
+                }, "snippet,status").ExecuteAsync();
+            }
+            catch (Exception ex)
+            {
+                youtubeErrorOccured = true;
+                _logger.LogError(ex, "YouTube Error");
+            }
 
             foreach (YouTubeVideo video in newVideos)
             {
-                await youtubeService.PlaylistItems.Insert(new PlaylistItem()
+                if (!youtubeErrorOccured)
                 {
-                    Snippet = new PlaylistItemSnippet()
+                    try
                     {
-                        PlaylistId = newPlaylist.Id,
-                        ResourceId = new ResourceId()
+                        await youtubeService.PlaylistItems.Insert(new PlaylistItem()
                         {
-                            Kind = "youtube#video",
-                            VideoId = video.YouTubeId
-                        }
+                            Snippet = new PlaylistItemSnippet()
+                            {
+                                PlaylistId = newPlaylist.Id,
+                                ResourceId = new ResourceId()
+                                {
+                                    Kind = "youtube#video",
+                                    VideoId = video.YouTubeId
+                                }
+                            }
+                        }, "snippet").ExecuteAsync();
                     }
-                }, "snippet").ExecuteAsync();
+                    catch (Exception ex)
+                    {
+                        youtubeErrorOccured = true;
+                        _logger.LogError(ex, "YouTube Error");
+                    }
+                }
 
                 await _databaseService.Insert(new YouTubeVideo()
                 {
                     Link = video.Link,
                     YouTubeId = video.YouTubeId,
                 });
+            }
+
+            if (newPlaylist == null)
+            {
+                return string.Empty;
             }
 
             string playlistUrl = $"https://www.youtube.com/playlist?list={newPlaylist.Id}";
@@ -142,7 +170,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             DateTime today = _dateTimeProvider.UtcNow.Date;
 
             ICollection<YouTubeRssUrl> urls = await _databaseService.GetAll<YouTubeRssUrl>();
-            Dictionary<string, YouTubeVideo> existingVideos = (await _databaseService.GetAll<YouTubeVideo>()).Where(x => x.PublishDate >= today).ToDictionary(k => k.YouTubeId);
+            Dictionary<string, YouTubeVideo> existingVideos = (await _databaseService.GetAll<YouTubeVideo>()).ToDictionary(k => k.YouTubeId);
 
             List<YouTubeVideo> newVideos = new List<YouTubeVideo>();
 

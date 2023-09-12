@@ -33,7 +33,8 @@
                                 </Grid.RowDefinitions>
 
                                 <StackPanel Grid.Row="0" Orientation="Horizontal">
-                                    <Button x:Name="BtnRefreshUrls" Width="75" Margin="5" Content="Add" Click="BtnRefreshUrls_Click" />
+                                    <Button x:Name="BtnRefreshUrls" Width="75" Margin="5" Content="Refresh" Click="BtnRefreshUrls_Click" />
+                                    <Label x:Name="LblRefreshUrlsCount" />
                                 </StackPanel>
 
                                 <DataGrid x:Name="DgrUrls" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" ColumnWidth="*">
@@ -51,7 +52,8 @@
                                 </Grid.RowDefinitions>
 
                                 <StackPanel Grid.Row="0" Orientation="Horizontal">
-                                    <Button x:Name="BtnRefreshVideos" Width="75" Margin="5" Content="Add" Click="BtnRefreshVideos_Click" />
+                                    <Button x:Name="BtnRefreshVideos" Width="75" Margin="5" Content="Refresh" Click="BtnRefreshVideos_Click" />
+                                    <Label x:Name="LblRefreshVideosCount" />
                                 </StackPanel>
 
                                 <DataGrid x:Name="DgrVideos" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" ColumnWidth="*">
@@ -69,7 +71,8 @@
                                 </Grid.RowDefinitions>
 
                                 <StackPanel Grid.Row="0" Orientation="Horizontal">
-                                    <Button x:Name="BtnRefreshPlaylists" Width="75" Margin="5" Content="Add" Click="BtnRefreshPlaylists_Click" />
+                                    <Button x:Name="BtnRefreshPlaylists" Width="75" Margin="5" Content="Refresh" Click="BtnRefreshPlaylists_Click" />
+                                    <Label x:Name="LblRefreshPlaylistsCount" />
                                 </StackPanel>
 
                                 <DataGrid x:Name="DgrPlaylists" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" ColumnWidth="*">
