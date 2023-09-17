@@ -14,7 +14,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Providers
 
         public string GetName()
         {
-            return "Subs - " + _dateTimeProvider.UtcNow.ToString("yyyy-MM-dd");
+            return "Subs - " + _dateTimeProvider.Now.ToString("yyyy-MM-dd");
         }
     }
 }
