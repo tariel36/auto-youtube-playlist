@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using AutoYoutubePlaylist.Gui.Features.Data.Models;
+using AutoYoutubePlaylist.Logic.Features.Chrono.Providers;
 using AutoYoutubePlaylist.Logic.Features.Database.Models;
 using AutoYoutubePlaylist.Logic.Features.Database.Services;
 using AutoYoutubePlaylist.Logic.Features.YouTube.Models;
@@ -24,7 +25,7 @@ namespace AutoYoutubePlaylist.Gui
         {
             InitializeComponent();
 
-            _databaseService = new DatabaseService(Features.EntryPoint.App.Configuration);
+            _databaseService = new DatabaseService(Features.EntryPoint.App.Configuration, new DateTimeProvider());
         }
 
         private async void BtnAddChannels_Click(object sender, RoutedEventArgs args)

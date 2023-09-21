@@ -13,5 +13,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Models
         public Guid Id { get; set; }
 
         public string Url { get; set; }
+
+        public DateTime Added { get; set; }
     }
 }

@@ -142,11 +142,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 
                 _logger.LogDebug($"Adding video to database - '{video.Link}'");
 
-                await _databaseService.Insert(new YouTubeVideo()
-                {
-                    Link = video.Link,
-                    YouTubeId = video.YouTubeId,
-                });
+                await _databaseService.Insert(video);
             }
 
             if (newPlaylist == null)
