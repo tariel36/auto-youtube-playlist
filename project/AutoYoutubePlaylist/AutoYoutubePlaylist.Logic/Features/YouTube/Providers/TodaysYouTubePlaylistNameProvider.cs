@@ -12,9 +12,17 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Providers
             _dateTimeProvider = dateTimeProvider ?? throw new ArgumentNullException(nameof(dateTimeProvider));
         }
 
+        public string IdentyfingPart
+        {
+            get
+            {
+                return "Subs - ";
+            }
+        }
+
         public string GetName()
         {
-            return "Subs - " + _dateTimeProvider.Now.ToString("yyyy-MM-dd");
+            return IdentyfingPart + _dateTimeProvider.Now.ToString("yyyy-MM-dd");
         }
     }
 }

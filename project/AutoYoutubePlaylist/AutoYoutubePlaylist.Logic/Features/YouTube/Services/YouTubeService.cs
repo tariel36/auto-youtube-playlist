@@ -37,7 +37,8 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 
             ICollection<YouTubeVideo> newVideos = await GetNewVideos();
 
-            _logger.LogDebug($"New videos: '${newVideos?.Count}'"); ;
+            _logger.LogDebug($"New videos: '${newVideos?.Count}'");
+            ;
 
             if (!(newVideos?.Count > 0))
             {
@@ -81,6 +82,10 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                 _logger.LogError(ex, "An error occured when trying to use authorize into Google. Try to change default webbrowser that has no logged in YT User and try again");
                 throw new InvalidOperationException("An error occured when trying to use authorize into Google. Try to change default webbrowser that has no logged in YT User and try again", ex);
             }
+
+            _logger.LogDebug("Deleting old playlists");
+
+            await DeleteOldPlaylists(youtubeService);
 
             _logger.LogDebug("Creating new playlist");
 
@@ -213,6 +218,49 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             }
 
             return newVideos;
+        }
+
+        private async Task DeleteOldPlaylists(Google.Apis.YouTube.v3.YouTubeService youtubeService)
+        {
+            string playlistOldDaysStr = _configuration[ConfigurationKeys.PlaylistOldDays];
+
+            if (!int.TryParse(playlistOldDaysStr, out int playlistOldDays))
+            {
+                _logger.LogWarning($"Invalid `{ConfigurationKeys.PlaylistOldDays}` configuration. `{playlistOldDaysStr}` is not valid integer.");
+                return;
+            }
+
+            PlaylistListResponse response = null;
+            List<Playlist> toDelete = new List<Playlist>();
+
+            do
+            {
+                Google.Apis.YouTube.v3.PlaylistsResource.ListRequest request = youtubeService.Playlists.List("id,snippet");
+                request.Mine = true;
+                request.MaxResults = 100;
+                request.PageToken = response?.NextPageToken;
+
+                response = await request.ExecuteAsync();
+
+                DateTime oldDate = _dateTimeProvider.Now.AddDays(-playlistOldDays);
+
+                toDelete.AddRange(response.Items.Where(x => x.Snippet.Title.StartsWith(_playlistNameProvider.IdentyfingPart)).Where(x => x.Snippet.PublishedAtDateTimeOffset <= oldDate));
+            }
+            while (!string.IsNullOrWhiteSpace(response.NextPageToken));
+
+            foreach (Playlist playlist in toDelete)
+            {
+                try
+                {
+                    _logger.LogDebug($"Deleting `{playlist.Snippet.Title}` playlist");
+                    await youtubeService.Playlists.Delete(playlist.Id).ExecuteAsync();
+                    _logger.LogDebug($"Deleted `{playlist.Snippet.Title}` playlist");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"While deleting `{playlist.Snippet.Title}` playlist");
+                }
+            }
         }
     }
 }

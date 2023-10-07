@@ -7,5 +7,6 @@
         public const string BrowserPath = nameof(BrowserPath);
         public const string ClientSecretsFilePath = nameof(ClientSecretsFilePath);
         public const string OpenPlaylist = nameof(OpenPlaylist);
+        public const string PlaylistOldDays = nameof(PlaylistOldDays);
     }
 }
