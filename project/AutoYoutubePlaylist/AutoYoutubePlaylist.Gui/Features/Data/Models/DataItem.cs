@@ -1,12 +1,20 @@
-﻿namespace AutoYoutubePlaylist.Gui.Features.Data.Models
+﻿using System;
+
+namespace AutoYoutubePlaylist.Gui.Features.Data.Models
 {
     public class DataItem
     {
-        public DataItem(string value)
+        public DataItem(string json, Guid id, DateTime added)
         {
-            Value = value;
+            Json = json;
+            Id = id;
+            Added = added;
         }
 
-        public string Value { get; set; }
+        public string Json { get; set; }
+
+        public Guid Id { get; set; }
+
+        public DateTime Added { get; set; }
     }
 }

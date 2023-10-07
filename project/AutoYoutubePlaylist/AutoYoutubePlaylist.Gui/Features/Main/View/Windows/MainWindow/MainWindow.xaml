@@ -39,7 +39,7 @@
 
                                 <DataGrid x:Name="DgrUrls" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" ColumnWidth="*">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Data" Binding="{Binding Value}" />
+                                        <DataGridTextColumn Header="Data" Binding="{Binding Json}" />
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>
@@ -58,7 +58,15 @@
 
                                 <DataGrid x:Name="DgrVideos" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" ColumnWidth="*">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Data" Binding="{Binding Value}" />
+                                        <DataGridTextColumn Header="Added" Binding="{Binding Added, StringFormat='{}{0:yyyy-MM-dd}'}" MaxWidth="100" />
+                                        <DataGridTextColumn Header="Data" Binding="{Binding Json}" />
+                                        <DataGridTemplateColumn MaxWidth="133" Header="Actions">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Width="127" Height="27" Content="Delete" Click="DeleteVideo_Click" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>
@@ -77,7 +85,15 @@
 
                                 <DataGrid x:Name="DgrPlaylists" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" ColumnWidth="*">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Data" Binding="{Binding Value}" />
+                                        <DataGridTextColumn Header="Added" Binding="{Binding Added, StringFormat='{}{0:yyyy-MM-dd}'}" MaxWidth="100" />
+                                        <DataGridTextColumn Header="Data" Binding="{Binding Json}" />
+                                        <DataGridTemplateColumn MaxWidth="133" Header="Actions">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Width="127" Height="27" Content="Delete" Click="DeletePlaylist_Click" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>

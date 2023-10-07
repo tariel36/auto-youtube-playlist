@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -69,8 +70,32 @@ namespace AutoYoutubePlaylist.Gui
 
         private async Task RefreshData<TModel>(DataGrid dgr, Label lbl) where TModel : IDatabaseEntity
         {
-            dgr.ItemsSource = (await _databaseService.GetAll<TModel>()).Select(x => JsonConvert.SerializeObject(x)).Select(x => new DataItem(x)).ToList();
+            dgr.ItemsSource = new ObservableCollection<DataItem>((await _databaseService.GetAll<TModel>()).Select(x => new DataItem(JsonConvert.SerializeObject(x), x.Id, x.Added)).ToList());
             lbl.Content = (dgr.ItemsSource as ICollection)?.Count ?? 0;
+        }
+
+        private async void DeleteVideo_Click(object sender, RoutedEventArgs args)
+        {
+            if (!((args.Source as Button)?.DataContext is DataItem dataItem))
+            {
+                return;
+            }
+
+            await _databaseService.Delete<YouTubeVideo>(dataItem.Id);
+
+            (DgrVideos.ItemsSource as ObservableCollection<DataItem>)?.Remove(dataItem);
+        }
+
+        private async void DeletePlaylist_Click(object sender, RoutedEventArgs args)
+        {
+            if (!((args.Source as Button)?.DataContext is DataItem dataItem))
+            {
+                return;
+            }
+
+            await _databaseService.Delete<YouTubePlaylist>(dataItem.Id);
+
+            (DgrPlaylists.ItemsSource as ObservableCollection<DataItem>)?.Remove(dataItem);
         }
     }
 }
