@@ -27,6 +27,7 @@ The `appsettings.json` file.
 | `ClientSecretsFilePath` | `secrets.json` | Path to file with YT api secrets. |
 | `BrowserPath` | `C:\\Program Files\\Vivaldi\\Application\\vivaldi.exe` | Path to browser that's opened with new playlist. |
 | `OpenPlaylist` | `1` | Indicates whether new playlist should be opened - `1` for yes, other value for no. |
+| `PlaylistOldDays` | `7` | Playlists older than today minus this value will be automatically deleted. Comparison is made based on Playlists' names. |
 
 **Besides the config file, proper OAuth credentials should be created in Google Console.**
 
