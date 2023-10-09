@@ -13,6 +13,8 @@ namespace AutoYoutubePlaylist.Gui.Features.Data.Models
 
         public string Json { get; set; }
 
+        public string Value { get; set; }
+
         public Guid Id { get; set; }
 
         public DateTime Added { get; set; }

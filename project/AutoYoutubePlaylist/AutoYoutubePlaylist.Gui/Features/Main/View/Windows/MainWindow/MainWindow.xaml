@@ -40,6 +40,14 @@
                                 <DataGrid x:Name="DgrUrls" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" ColumnWidth="*">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Data" Binding="{Binding Json}" />
+                                        <DataGridTextColumn Header="Name" Binding="{Binding Value}" />
+                                        <DataGridTemplateColumn MaxWidth="133" Header="Actions">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Width="127" Height="27" Content="Delete" Click="DeleteUrl_Click" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>

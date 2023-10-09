@@ -68,34 +68,38 @@ namespace AutoYoutubePlaylist.Gui
             await RefreshData<YouTubePlaylist>(DgrPlaylists, LblRefreshPlaylistsCount);
         }
 
-        private async Task RefreshData<TModel>(DataGrid dgr, Label lbl) where TModel : IDatabaseEntity
+        private async void DeleteUrl_Click(object sender, RoutedEventArgs args)
         {
-            dgr.ItemsSource = new ObservableCollection<DataItem>((await _databaseService.GetAll<TModel>()).Select(x => new DataItem(JsonConvert.SerializeObject(x), x.Id, x.Added)).ToList());
-            lbl.Content = (dgr.ItemsSource as ICollection)?.Count ?? 0;
+            await DeleteData<YouTubeRssUrl>(args, DgrUrls);
         }
 
         private async void DeleteVideo_Click(object sender, RoutedEventArgs args)
         {
-            if (!((args.Source as Button)?.DataContext is DataItem dataItem))
-            {
-                return;
-            }
-
-            await _databaseService.Delete<YouTubeVideo>(dataItem.Id);
-
-            (DgrVideos.ItemsSource as ObservableCollection<DataItem>)?.Remove(dataItem);
+            await DeleteData<YouTubeVideo>(args, DgrVideos);
         }
 
         private async void DeletePlaylist_Click(object sender, RoutedEventArgs args)
+        {
+            await DeleteData<YouTubePlaylist>(args, DgrPlaylists);
+        }
+
+        private async Task RefreshData<TModel>(DataGrid dgr, Label lbl) where TModel : IDatabaseEntity
+        {
+            dgr.ItemsSource = new ObservableCollection<DataItem>((await _databaseService.GetAll<TModel>()).Select(x => new DataItem(JsonConvert.SerializeObject(x), x.Id, x.Added) { Value = x is YouTubeRssUrl rss ? rss.Url : null }).ToList());
+            lbl.Content = (dgr.ItemsSource as ICollection)?.Count ?? 0;
+        }
+
+        private async Task DeleteData<TType>(RoutedEventArgs args, DataGrid dgr)
+            where TType : IDatabaseEntity
         {
             if (!((args.Source as Button)?.DataContext is DataItem dataItem))
             {
                 return;
             }
 
-            await _databaseService.Delete<YouTubePlaylist>(dataItem.Id);
+            await _databaseService.Delete<TType>(dataItem.Id);
 
-            (DgrPlaylists.ItemsSource as ObservableCollection<DataItem>)?.Remove(dataItem);
+            (dgr.ItemsSource as ObservableCollection<DataItem>)?.Remove(dataItem);
         }
     }
 }
