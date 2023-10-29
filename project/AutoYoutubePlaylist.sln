@@ -16,6 +16,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configs", "Configs", "{C146
 		AutoYoutubePlaylist.Shared\Configs\appsettings.template.json = AutoYoutubePlaylist.Shared\Configs\appsettings.template.json
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Code", "Code", "{C817D336-A04F-48F8-9EFE-6E02B50EC862}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Properties", "Properties", "{1E5B4B75-1E41-47BD-900A-16A3A53151B5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +44,8 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C146E12E-FDBF-48B6-9A34-570223AF34CE} = {DADA3322-F2EE-402F-9865-03C35ECE9A4E}
+		{C817D336-A04F-48F8-9EFE-6E02B50EC862} = {DADA3322-F2EE-402F-9865-03C35ECE9A4E}
+		{1E5B4B75-1E41-47BD-900A-16A3A53151B5} = {C817D336-A04F-48F8-9EFE-6E02B50EC862}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BA34C26F-3CA9-4768-9CA1-EF127480CD23}
