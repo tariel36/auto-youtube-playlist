@@ -35,7 +35,6 @@ The `appsettings.json` file.
 
 * `AutoYoutubePlaylist.Console` - The playlist creation console app;
 * `AutoYoutubePlaylist.Gui` - Simple GUI to add channels to database and display data within database;
-* `AutoYoutubePlaylist.Service` - API service for managing playlist and database;
 * `AutoYoutubePlaylist.Logic` - Most of the app logic;
 
 ## License

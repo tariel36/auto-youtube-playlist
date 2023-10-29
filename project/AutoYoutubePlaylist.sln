@@ -3,13 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33815.320
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoYoutubePlaylist.Service", "AutoYoutubePlaylist.Service\AutoYoutubePlaylist.Service.csproj", "{79E1BF18-C49B-4B0F-A54B-346BCBE37EA4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoYoutubePlaylist.Logic", "AutoYoutubePlaylist.Logic\AutoYoutubePlaylist.Logic.csproj", "{5F3903CA-DEDE-4BF7-8D72-7EC79C68C701}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoYoutubePlaylist.Logic", "AutoYoutubePlaylist.Logic\AutoYoutubePlaylist.Logic.csproj", "{5F3903CA-DEDE-4BF7-8D72-7EC79C68C701}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoYoutubePlaylist.Console", "AutoYoutubePlaylist.Console\AutoYoutubePlaylist.Console.csproj", "{FC3D499A-3E16-4E70-BAC6-E84C1A201FDB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoYoutubePlaylist.Console", "AutoYoutubePlaylist.Console\AutoYoutubePlaylist.Console.csproj", "{FC3D499A-3E16-4E70-BAC6-E84C1A201FDB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoYoutubePlaylist.Gui", "AutoYoutubePlaylist.Gui\AutoYoutubePlaylist.Gui.csproj", "{31DE49D6-6C68-4B50-A581-2BFF5D2876A4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoYoutubePlaylist.Gui", "AutoYoutubePlaylist.Gui\AutoYoutubePlaylist.Gui.csproj", "{31DE49D6-6C68-4B50-A581-2BFF5D2876A4}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AutoYoutubePlaylist.Shared", "AutoYoutubePlaylist.Shared", "{DADA3322-F2EE-402F-9865-03C35ECE9A4E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configs", "Configs", "{C146E12E-FDBF-48B6-9A34-570223AF34CE}"
+	ProjectSection(SolutionItems) = preProject
+		AutoYoutubePlaylist.Shared\Configs\appsettings.template.json = AutoYoutubePlaylist.Shared\Configs\appsettings.template.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +22,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{79E1BF18-C49B-4B0F-A54B-346BCBE37EA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{79E1BF18-C49B-4B0F-A54B-346BCBE37EA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{79E1BF18-C49B-4B0F-A54B-346BCBE37EA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{79E1BF18-C49B-4B0F-A54B-346BCBE37EA4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5F3903CA-DEDE-4BF7-8D72-7EC79C68C701}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5F3903CA-DEDE-4BF7-8D72-7EC79C68C701}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F3903CA-DEDE-4BF7-8D72-7EC79C68C701}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -36,6 +37,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C146E12E-FDBF-48B6-9A34-570223AF34CE} = {DADA3322-F2EE-402F-9865-03C35ECE9A4E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BA34C26F-3CA9-4768-9CA1-EF127480CD23}
