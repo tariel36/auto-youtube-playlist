@@ -19,6 +19,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Code", "Code", "{C817D336-A04F-48F8-9EFE-6E02B50EC862}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Properties", "Properties", "{1E5B4B75-1E41-47BD-900A-16A3A53151B5}"
+	ProjectSection(SolutionItems) = preProject
+		AutoYoutubePlaylist.Shared\Code\Properties\SharedAssemblyInfo.cs = AutoYoutubePlaylist.Shared\Code\Properties\SharedAssemblyInfo.cs
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
