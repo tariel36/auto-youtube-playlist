@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoYoutubePlaylist.Console
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoYoutubePlaylist.Gui", "AutoYoutubePlaylist.Gui\AutoYoutubePlaylist.Gui.csproj", "{31DE49D6-6C68-4B50-A581-2BFF5D2876A4}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{DADA3322-F2EE-402F-9865-03C35ECE9A4E}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Root", "Root", "{DADA3322-F2EE-402F-9865-03C35ECE9A4E}"
 	ProjectSection(SolutionItems) = preProject
 		..\.gitignore = ..\.gitignore
 		..\LICENSE = ..\LICENSE
@@ -18,7 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{DADA3322-F
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configs", "Configs", "{C146E12E-FDBF-48B6-9A34-570223AF34CE}"
 	ProjectSection(SolutionItems) = preProject
-		AutoYoutubePlaylist.Shared\Configs\appsettings.template.json = AutoYoutubePlaylist.Shared\Configs\appsettings.template.json
+		AutoYoutubePlaylist.Shared\Configs\AppsSttings.Template.json = AutoYoutubePlaylist.Shared\Configs\AppsSttings.Template.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Code", "Code", "{C817D336-A04F-48F8-9EFE-6E02B50EC862}"
@@ -28,7 +28,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Properties", "Properties", 
 		AutoYoutubePlaylist.Shared\Code\Properties\SharedAssemblyInfo.cs = AutoYoutubePlaylist.Shared\Code\Properties\SharedAssemblyInfo.cs
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project", "project", "{C286D420-C722-442A-ABE8-D52F3937F39C}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Project", "Project", "{C286D420-C722-442A-ABE8-D52F3937F39C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{60D0B96A-71D5-42A9-94C9-6C865F0FEC7A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{E5569837-5619-484B-8CDA-ACA341477EE2}"
+	ProjectSection(SolutionItems) = preProject
+		..\.github\workflows\build-and-publish.yaml = ..\.github\workflows\build-and-publish.yaml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,6 +64,8 @@ Global
 		{C817D336-A04F-48F8-9EFE-6E02B50EC862} = {C286D420-C722-442A-ABE8-D52F3937F39C}
 		{1E5B4B75-1E41-47BD-900A-16A3A53151B5} = {C817D336-A04F-48F8-9EFE-6E02B50EC862}
 		{C286D420-C722-442A-ABE8-D52F3937F39C} = {DADA3322-F2EE-402F-9865-03C35ECE9A4E}
+		{60D0B96A-71D5-42A9-94C9-6C865F0FEC7A} = {DADA3322-F2EE-402F-9865-03C35ECE9A4E}
+		{E5569837-5619-484B-8CDA-ACA341477EE2} = {60D0B96A-71D5-42A9-94C9-6C865F0FEC7A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BA34C26F-3CA9-4768-9CA1-EF127480CD23}

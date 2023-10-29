@@ -19,9 +19,9 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Models
 
         public Guid Id { get; set; }
 
-        public string YouTubeId { get; set; }
+        public string YouTubeId { get; set; } = null!;
 
-        public string Link { get; set; }
+        public string Link { get; set; } = null!;
 
         public DateTime? PublishDate { get; set; }
 

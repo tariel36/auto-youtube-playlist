@@ -7,6 +7,7 @@ using AutoYoutubePlaylist.Logic.Features.YouTube.Providers;
 using CodeHollow.FeedReader;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
+using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -20,52 +21,52 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
         private readonly IDatabaseService _databaseService;
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly ILogger _logger;
-        private readonly ITodaysYouTubePlaylistNameProvider _playlistNameProvider;
+        private readonly ITodayYouTubePlaylistNameProvider _playListNameProvider;
 
-        public YouTubeService(ILogger<YouTubeService> logger, ITodaysYouTubePlaylistNameProvider playlistNameProvider, IConfiguration configuration, IDatabaseService databaseService, IDateTimeProvider dateTimeProvider)
+        public YouTubeService(ILogger<YouTubeService> logger, ITodayYouTubePlaylistNameProvider playListNameProvider, IConfiguration configuration, IDatabaseService databaseService, IDateTimeProvider dateTimeProvider)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _playlistNameProvider = playlistNameProvider ?? throw new ArgumentNullException(nameof(playlistNameProvider));
+            _playListNameProvider = playListNameProvider ?? throw new ArgumentNullException(nameof(playListNameProvider));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
             _dateTimeProvider = dateTimeProvider ?? throw new ArgumentNullException(nameof(dateTimeProvider));
         }
 
-        public async Task<YouTubePlaylist> CreateNewPlaylist()
+        public async Task<YouTubePlaylist?> CreateNewPlaylist()
         {
             _logger.LogDebug("Getting new videos...");
 
             ICollection<YouTubeVideo> newVideos = await GetNewVideos();
 
-            _logger.LogDebug($"New videos: '${newVideos?.Count}'");
-            ;
+            _logger.LogDebug("New videos: '{Count}'", newVideos.Count);
 
-            if (!(newVideos?.Count > 0))
+            if (!(newVideos.Count > 0))
             {
-                _logger.LogWarning($"No videos, returning null.");
+                _logger.LogWarning("No videos, returning null.");
 
                 return null;
             }
 
             _logger.LogDebug("Creating YT credentials");
 
-            string secretsFilePath = _configuration[ConfigurationKeys.ClientSecretsFilePath];
+            string? secretsFilePath = _configuration[ConfigurationKeys.ClientSecretsFilePath];
 
             if (string.IsNullOrWhiteSpace(secretsFilePath) || !File.Exists(secretsFilePath))
             {
-                throw new InvalidOperationException("YouTube secrests file path does not exist. Set proper path to file.");
+                throw new InvalidOperationException("YouTube secrets file path does not exist. Set proper path to file.");
             }
 
-            using FileStream stream = new FileStream(secretsFilePath, FileMode.Open, FileAccess.Read);
+            await using FileStream stream = new (secretsFilePath, FileMode.Open, FileAccess.Read);
 
             DateTime utcNow = _dateTimeProvider.UtcNow;
-            UserCredential credential;
             Google.Apis.YouTube.v3.YouTubeService youtubeService;
 
             try
             {
-                credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                    GoogleClientSecrets.FromStream(stream).Secrets,
+                GoogleClientSecrets secrets = await GoogleClientSecrets.FromStreamAsync(stream);
+
+                UserCredential credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                    secrets.Secrets,
                     new[] { Google.Apis.YouTube.v3.YouTubeService.Scope.Youtube },
                     _configuration[ConfigurationKeys.YouTubeUser],
                     CancellationToken.None
@@ -79,8 +80,8 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occured when trying to use authorize into Google. Try to change default webbrowser that has no logged in YT User and try again");
-                throw new InvalidOperationException("An error occured when trying to use authorize into Google. Try to change default webbrowser that has no logged in YT User and try again", ex);
+                _logger.LogError(ex, "An error occurred when trying to use authorize into Google. Try to change default web browser that has no logged in YT User and try again");
+                throw new InvalidOperationException("An error occurred when trying to use authorize into Google. Try to change default web browser that has no logged in YT User and try again", ex);
             }
 
             _logger.LogDebug("Deleting old playlists");
@@ -89,41 +90,26 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 
             _logger.LogDebug("Creating new playlist");
 
-            bool youtubeErrorOccured = false;
+            (Playlist? newPlaylist, bool youtubeErrorOccurred) = await GetNewYouTubePlaylist(youtubeService);
 
-            Playlist newPlaylist = null;
-
-            try
+            if (newPlaylist == null)
             {
-                newPlaylist = await youtubeService.Playlists.Insert(new Playlist()
-                {
-                    Snippet = new PlaylistSnippet()
-                    {
-                        Title = _playlistNameProvider.GetName(),
-                    },
-                    Status = new PlaylistStatus()
-                    {
-                        PrivacyStatus = "unlisted"
-                    }
-                }, "snippet,status").ExecuteAsync();
-            }
-            catch (Exception ex)
-            {
-                youtubeErrorOccured = true;
-                _logger.LogError(ex, "YouTube Error");
-            }
+                _logger.LogWarning("No playlist object, returning null.");
 
+                return null;
+            }
+            
             _logger.LogDebug("Adding videos to playlist");
 
             foreach (YouTubeVideo video in newVideos)
             {
-                _logger.LogDebug($"Processing - '{video.Link}'");
+                _logger.LogDebug("Processing - '{Link}'", video.Link);
 
-                if (!youtubeErrorOccured)
+                if (!youtubeErrorOccurred)
                 {
                     try
                     {
-                        _logger.LogDebug($"Adding video to playlist - '{video.Link}'");
+                        _logger.LogDebug("Adding video to playlist - '{Link}'", video.Link);
 
                         await youtubeService.PlaylistItems.Insert(new PlaylistItem()
                         {
@@ -140,29 +126,22 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                     }
                     catch (Exception ex)
                     {
-                        youtubeErrorOccured = true;
+                        youtubeErrorOccurred = true;
                         _logger.LogError(ex, "YouTube Error - New videos will be added to database, but not to playlist");
                     }
                 }
 
-                _logger.LogDebug($"Adding video to database - '{video.Link}'");
+                _logger.LogDebug("Adding video to database - '{Link}'", video.Link);
 
                 await _databaseService.Insert(video);
             }
 
-            if (newPlaylist == null)
-            {
-                _logger.LogWarning($"No playlist object, returning null.");
-
-                return null;
-            }
-
-            _logger.LogDebug($"Adding playlist to database...");
+            _logger.LogDebug("Adding playlist to database...");
 
             string playlistUrl = $"https://www.youtube.com/playlist?list={newPlaylist.Id}";
             string firstVideoUrl = $"https://www.youtube.com/watch?v={newVideos.First().YouTubeId}&list={newPlaylist.Id}&index=1";
 
-            YouTubePlaylist youtubePlaylist = new YouTubePlaylist()
+            YouTubePlaylist youtubePlaylist = new ()
             {
                 Url = playlistUrl,
                 CreationDate = utcNow,
@@ -172,12 +151,12 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 
             await _databaseService.Insert(youtubePlaylist);
 
-            _logger.LogDebug($"Returning...");
+            _logger.LogDebug("Returning...");
 
             return youtubePlaylist;
         }
 
-        private async Task<YouTubeChannel> GetRecentChannelStatus(string channelRssUrl)
+        private static async Task<YouTubeChannel> GetRecentChannelStatus(string channelRssUrl)
         {
             Feed feed = await FeedReader.ReadAsync(channelRssUrl);
 
@@ -194,20 +173,18 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 
         private async Task<ICollection<YouTubeVideo>> GetNewVideos()
         {
-            DateTime today = _dateTimeProvider.UtcNow.Date;
-
             ICollection<YouTubeRssUrl> urls = await _databaseService.GetAll<YouTubeRssUrl>();
             Dictionary<string, YouTubeVideo> existingVideos = (await _databaseService.GetAll<YouTubeVideo>()).ToDictionary(k => k.YouTubeId);
 
-            List<YouTubeVideo> newVideos = new List<YouTubeVideo>();
+            List<YouTubeVideo> newVideos = new ();
 
             foreach (YouTubeRssUrl url in urls)
             {
-                YouTubeChannel retrivedChannel = await GetRecentChannelStatus(url.Url);
+                YouTubeChannel retrievedChannel = await GetRecentChannelStatus(url.Url);
 
-                if (retrivedChannel?.Videos?.Count > 0)
+                if (retrievedChannel.Videos.Count > 0)
                 {
-                    retrivedChannel.Videos.ForEach(x =>
+                    retrievedChannel.Videos.ForEach(x =>
                     {
                         if (!existingVideos.ContainsKey(x.YouTubeId))
                         {
@@ -222,20 +199,20 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 
         private async Task DeleteOldPlaylists(Google.Apis.YouTube.v3.YouTubeService youtubeService)
         {
-            string playlistOldDaysStr = _configuration[ConfigurationKeys.PlaylistOldDays];
+            string? playlistOldDaysStr = _configuration[ConfigurationKeys.PlaylistOldDays];
 
             if (!int.TryParse(playlistOldDaysStr, out int playlistOldDays))
             {
-                _logger.LogWarning($"Invalid `{ConfigurationKeys.PlaylistOldDays}` configuration. `{playlistOldDaysStr}` is not valid integer.");
+                _logger.LogWarning("Invalid `{OldDays}` configuration. `{playlistOldDaysStr}` is not valid integer.", ConfigurationKeys.PlaylistOldDays, playlistOldDaysStr);
                 return;
             }
 
-            PlaylistListResponse response = null;
-            List<Playlist> toDelete = new List<Playlist>();
+            PlaylistListResponse? response = null;
+            List<Playlist> toDelete = new ();
 
             do
             {
-                Google.Apis.YouTube.v3.PlaylistsResource.ListRequest request = youtubeService.Playlists.List("id,snippet");
+                PlaylistsResource.ListRequest request = youtubeService.Playlists.List("id,snippet");
                 request.Mine = true;
                 request.MaxResults = 100;
                 request.PageToken = response?.NextPageToken;
@@ -244,7 +221,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 
                 DateTime oldDate = _dateTimeProvider.Now.AddDays(-playlistOldDays);
 
-                toDelete.AddRange(response.Items.Where(x => x.Snippet.Title.StartsWith(_playlistNameProvider.IdentyfingPart)).Where(x => x.Snippet.PublishedAtDateTimeOffset <= oldDate));
+                toDelete.AddRange(response.Items.Where(x => x.Snippet.Title.StartsWith(_playListNameProvider.IdentifyingPart)).Where(x => x.Snippet.PublishedAtDateTimeOffset <= oldDate));
             }
             while (!string.IsNullOrWhiteSpace(response.NextPageToken));
 
@@ -252,15 +229,44 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             {
                 try
                 {
-                    _logger.LogDebug($"Deleting `{playlist.Snippet.Title}` playlist");
+                    _logger.LogDebug("Deleting `{title}` playlist", playlist.Snippet.Title);
                     await youtubeService.Playlists.Delete(playlist.Id).ExecuteAsync();
-                    _logger.LogDebug($"Deleted `{playlist.Snippet.Title}` playlist");
+                    _logger.LogDebug("Deleted `{title}` playlist", playlist.Snippet.Title);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"While deleting `{playlist.Snippet.Title}` playlist");
+                    _logger.LogError(ex, "While deleting `{title}` playlist", playlist.Snippet.Title);
                 }
             }
+        }
+
+        private async Task<(Playlist? playlist, bool youtubeErrorOccurred)> GetNewYouTubePlaylist(Google.Apis.YouTube.v3.YouTubeService youtubeService)
+        {
+            bool youtubeErrorOccurred = false;
+
+            try
+            {
+                Playlist? playlist = await youtubeService.Playlists.Insert(new Playlist()
+                {
+                    Snippet = new PlaylistSnippet()
+                    {
+                        Title = _playListNameProvider.GetName(),
+                    },
+                    Status = new PlaylistStatus()
+                    {
+                        PrivacyStatus = "unlisted"
+                    }
+                }, "snippet,status").ExecuteAsync();
+
+                return (playlist, youtubeErrorOccurred);
+            }
+            catch (Exception ex)
+            {
+                youtubeErrorOccurred = true;
+                _logger.LogError(ex, "YouTube Error");
+            }
+
+            return (null, youtubeErrorOccurred);
         }
     }
 }

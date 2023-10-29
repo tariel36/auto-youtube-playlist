@@ -2,6 +2,7 @@
 using AutoYoutubePlaylist.Logic.Features.YouTube.Models;
 using AutoYoutubePlaylist.Logic.Features.YouTube.Providers;
 using AutoYoutubePlaylist.Logic.Features.YouTube.Services;
+using AutoYoutubePlaylist.Logic.Features.YouTube.Urls;
 using Microsoft.Extensions.Logging;
 
 namespace AutoYoutubePlaylist.Logic.Features.Playlists.Services
@@ -12,19 +13,19 @@ namespace AutoYoutubePlaylist.Logic.Features.Playlists.Services
         private readonly ILogger _logger;
         private readonly IDatabaseService _databaseService;
         private readonly IYouTubeService _youTubeService;
-        private readonly ITodaysYouTubePlaylistNameProvider _playlistNameProvider;
+        private readonly ITodayYouTubePlaylistNameProvider _playListNameProvider;
 
-        public PlaylistService(ILogger<PlaylistService> logger, IDatabaseService databaseService, IYouTubeService youTubeService, ITodaysYouTubePlaylistNameProvider playlistNameProvider)
+        public PlaylistService(ILogger<PlaylistService> logger, IDatabaseService databaseService, IYouTubeService youTubeService, ITodayYouTubePlaylistNameProvider playListNameProvider)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
             _youTubeService = youTubeService ?? throw new ArgumentNullException(nameof(youTubeService));
-            _playlistNameProvider = playlistNameProvider ?? throw new ArgumentNullException(nameof(playlistNameProvider));
+            _playListNameProvider = playListNameProvider ?? throw new ArgumentNullException(nameof(playListNameProvider));
         }
 
-        public async Task AddChannel(string url)
+        public async Task AddChannel(string possibleUrl)
         {
-            string actualUrl = url.StartsWith("http") ? url : $"https://www.youtube.com/feeds/videos.xml?channel_id={url}";
+            string actualUrl = YouTubeRssUrlFactory.GetUrl(possibleUrl);
 
             if ((await _databaseService.GetAll<YouTubeRssUrl>()).FirstOrDefault(x => string.Equals(x.Url, actualUrl)) != null)
             {
@@ -47,26 +48,29 @@ namespace AutoYoutubePlaylist.Logic.Features.Playlists.Services
             return await _databaseService.GetAll<YouTubePlaylist>();
         }
 
-        public async Task<YouTubePlaylist> GetLatestPlaylist()
+        public async Task<YouTubePlaylist?> GetLatestPlaylist()
         {
-            return (await _databaseService.GetAll<YouTubePlaylist>()).OrderByDescending(x => x.CreationDate).FirstOrDefault();
+            return (await _databaseService.GetAll<YouTubePlaylist>()).MaxBy(x => x.CreationDate);
         }
 
-        public async Task<YouTubePlaylist> TriggerPlaylistCreation()
+        public async Task<YouTubePlaylist?> TriggerPlaylistCreation()
         {
-            string todaysName = _playlistNameProvider.GetName();
+            string todayName = _playListNameProvider.GetName();
 
-            YouTubePlaylist todaysPlaylist = (await _databaseService.GetAll<YouTubePlaylist>()).FirstOrDefault(x => string.Equals(x.Name, todaysName));
+            YouTubePlaylist? todayPlaylist = (await _databaseService.GetAll<YouTubePlaylist>()).FirstOrDefault(x => string.Equals(x.Name, todayName));
 
-            _logger.LogDebug($"Today's playlist: '{todaysPlaylist?.Name}' - '{todaysPlaylist?.Url}'");
-
-            if (todaysPlaylist != null)
+            if (todayPlaylist == null)
             {
-                _logger.LogDebug("Playlist already exists, returning it.");
-                return todaysPlaylist;
+                _logger.LogDebug("Creating new playlist.");
+
+                return await _youTubeService.CreateNewPlaylist();
             }
 
-            return await _youTubeService.CreateNewPlaylist();
+            _logger.LogDebug("Today's playlist: '{Name}' - '{Url}'", todayPlaylist.Name, todayPlaylist.Url);
+
+            _logger.LogDebug("Playlist already exists, returning it.");
+            
+            return todayPlaylist;
         }
     }
 }

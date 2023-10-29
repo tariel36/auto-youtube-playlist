@@ -1,8 +1,8 @@
 ﻿namespace AutoYoutubePlaylist.Logic.Features.YouTube.Providers
 {
-    public interface ITodaysYouTubePlaylistNameProvider
+    public interface ITodayYouTubePlaylistNameProvider
     {
-        string IdentyfingPart { get; }
+        string IdentifyingPart { get; }
 
         string GetName();
     }

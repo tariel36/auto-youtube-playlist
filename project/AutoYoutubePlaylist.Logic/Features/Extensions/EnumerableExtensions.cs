@@ -12,5 +12,10 @@
                 action(item);
             }
         }
+
+        public static IEnumerable<TValue> WhereNot<TValue>(this IEnumerable<TValue> enumerable, Func<TValue, bool> predicate)
+        {
+            return enumerable.Where(x => !predicate(x));
+        }
     }
 }

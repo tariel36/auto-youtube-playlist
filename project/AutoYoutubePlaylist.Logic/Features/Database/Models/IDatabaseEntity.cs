@@ -3,6 +3,7 @@
     public interface IDatabaseEntity
     {
         Guid Id { get; set; }
+
         DateTime Added { get; set; }
     }
 }

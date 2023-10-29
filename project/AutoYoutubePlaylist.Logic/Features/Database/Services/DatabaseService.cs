@@ -22,41 +22,46 @@ namespace AutoYoutubePlaylist.Logic.Features.Database.Services
 
         public async Task Delete<TModel>(Guid id) where TModel : IDatabaseEntity
         {
-            await Task.Factory.StartNew(() => { _db.GetCollection<TModel>().Delete(id); });
+            await Task.Factory.StartNew(() => _db.GetCollection<TModel>()?.Delete(id));
         }
 
         public async Task Delete<TModel>(TModel model) where TModel : IDatabaseEntity
         {
-            await Task.Factory.StartNew(() => { _db.GetCollection<TModel>().Delete(model.Id); });
+            await Task.Factory.StartNew(() => _db.GetCollection<TModel>()?.Delete(model.Id));
         }
 
         public async Task DeleteAll<TModel>() where TModel : IDatabaseEntity
         {
-            await Task.Factory.StartNew(() => { _db.GetCollection<TModel>().DeleteAll(); });
+            await Task.Factory.StartNew(() => _db.GetCollection<TModel>()?.DeleteAll());
         }
 
         public async Task<ICollection<TModel>> GetAll<TModel>() where TModel : IDatabaseEntity
         {
-            return await Task.Factory.StartNew(() => _db.GetCollection<TModel>().FindAll().ToList());
+            return await Task.Factory.StartNew(() => _db.GetCollection<TModel>()?.FindAll()?.ToList() ?? new List<TModel>());
         }
 
-        public async Task<TModel> GetById<TModel>(Guid id) where TModel : IDatabaseEntity
+        public async Task<TModel?> GetById<TModel>(Guid id) where TModel : IDatabaseEntity
         {
-            return await Task.Factory.StartNew(() => _db.GetCollection<TModel>().FindById(id));
+            return await Task.Factory.StartNew(() =>
+            {
+                ILiteCollection<TModel> coll = _db.GetCollection<TModel>();
+
+                return coll == null ? default : coll.FindById(id);
+            });
         }
 
-        public async Task<TModel> Insert<TModel>(TModel model) where TModel : IDatabaseEntity
+        public async Task<TModel?> Insert<TModel>(TModel model) where TModel : IDatabaseEntity
         {
             model.Added = _dateTimeProvider.UtcNow;
 
-            Guid id = await Task.Factory.StartNew(() => _db.GetCollection<TModel>().Insert(model));
+            Guid id = await Task.Factory.StartNew(() => _db.GetCollection<TModel>()?.Insert(model));
 
             return await GetById<TModel>(id);
         }
 
-        public async Task<TModel> Update<TModel>(TModel model) where TModel : IDatabaseEntity
+        public async Task<TModel?> Update<TModel>(TModel model) where TModel : IDatabaseEntity
         {
-            await Task.Factory.StartNew(() => _db.GetCollection<TModel>().Update(model));
+            await Task.Factory.StartNew(() => _db.GetCollection<TModel>()?.Update(model));
 
             return await GetById<TModel>(model.Id);
         }
