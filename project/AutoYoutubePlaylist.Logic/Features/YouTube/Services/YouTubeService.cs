@@ -56,7 +56,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                 throw new InvalidOperationException("YouTube secrets file path does not exist. Set proper path to file.");
             }
 
-            await using FileStream stream = new FileStream(secretsFilePath, FileMode.Open, FileAccess.Read);
+            await using FileStream stream = new (secretsFilePath, FileMode.Open, FileAccess.Read);
 
             DateTime utcNow = _dateTimeProvider.UtcNow;
             Google.Apis.YouTube.v3.YouTubeService youtubeService;
@@ -141,7 +141,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             string playlistUrl = $"https://www.youtube.com/playlist?list={newPlaylist.Id}";
             string firstVideoUrl = $"https://www.youtube.com/watch?v={newVideos.First().YouTubeId}&list={newPlaylist.Id}&index=1";
 
-            YouTubePlaylist youtubePlaylist = new YouTubePlaylist()
+            YouTubePlaylist youtubePlaylist = new ()
             {
                 Url = playlistUrl,
                 CreationDate = utcNow,
@@ -156,7 +156,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             return youtubePlaylist;
         }
 
-        private async Task<YouTubeChannel> GetRecentChannelStatus(string channelRssUrl)
+        private static async Task<YouTubeChannel> GetRecentChannelStatus(string channelRssUrl)
         {
             Feed feed = await FeedReader.ReadAsync(channelRssUrl);
 
@@ -176,7 +176,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             ICollection<YouTubeRssUrl> urls = await _databaseService.GetAll<YouTubeRssUrl>();
             Dictionary<string, YouTubeVideo> existingVideos = (await _databaseService.GetAll<YouTubeVideo>()).ToDictionary(k => k.YouTubeId);
 
-            List<YouTubeVideo> newVideos = new List<YouTubeVideo>();
+            List<YouTubeVideo> newVideos = new ();
 
             foreach (YouTubeRssUrl url in urls)
             {
@@ -208,7 +208,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             }
 
             PlaylistListResponse? response = null;
-            List<Playlist> toDelete = new List<Playlist>();
+            List<Playlist> toDelete = new ();
 
             do
             {
