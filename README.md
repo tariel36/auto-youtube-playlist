@@ -10,8 +10,9 @@ Tool used to create daily playlist based on provided channels' rss.
 
 ## Starting the project
 
-* Copy `appsettings.Template.json` and rename it to `appsettings.json` in `Logic` project;
-* Fill the `appsettings` properties as necessary;
+* Copy `AppsSttings.Template.json` from `Root/Project/Configs/` to `AutoYoutubePlaylist.Console` and `AutoYoutubePlaylist.Gui` projects;
+* Rename copied files from `AppsSttings.Template.json` to `AppsSttings.json`
+* Set values within `AppsSttings.json` as neccessary;
 
 ## Configuration
 
