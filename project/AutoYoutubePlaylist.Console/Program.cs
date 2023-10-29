@@ -19,7 +19,7 @@ builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
 builder.Services.AddSingleton<IPlaylistService, PlaylistService>();
 builder.Services.AddSingleton<IYouTubeService, YouTubeService>();
-builder.Services.AddSingleton<ITodaysYouTubePlaylistNameProvider, TodaysYouTubePlaylistNameProvider>();
+builder.Services.AddSingleton<ITodayYouTubePlaylistNameProvider, TodayYouTubePlaylistNameProvider>();
 
 using IHost host = builder.Build();
 
@@ -33,26 +33,40 @@ static async Task CreateNewPlaylist(IServiceProvider hostProvider)
 
     ILogger logger = provider.GetRequiredService<ILogger<Program>>();
 
-    logger.LogDebug($"Preparing services");
+    logger.LogDebug("Preparing services");
 
     IPlaylistService playlistService = provider.GetRequiredService<IPlaylistService>();
     IConfiguration configuration = provider.GetRequiredService<IConfiguration>();
     IDatabaseService database = provider.GetRequiredService<IDatabaseService>();
 
-    logger.LogDebug($"Starting playlist creation");
+    logger.LogDebug("Starting playlist creation");
 
-    YouTubePlaylist playlist = await playlistService.TriggerPlaylistCreation();
+    YouTubePlaylist? playlist = await playlistService.TriggerPlaylistCreation();
 
-    logger.LogDebug($"Retrived playlist: '{playlist?.Name}' - '{playlist?.Url}' - '{playlist?.Opened}'");
+    if (playlist == null)
+    {
+        logger.LogDebug("No playlist to process, finishing.");
+        return;
+    }
 
-    logger.LogDebug($"Should open new playlists (configuration): '{configuration[ConfigurationKeys.OpenPlaylist]}'");
+    logger.LogDebug("Retrieved playlist: '{PlaylistName}' - '{PlaylistNameUrl}' - '{PlaylistNameOpened}'", playlist.Name, playlist.Url, playlist.Opened);
 
-    if (playlist?.Opened == false && string.Equals(configuration[ConfigurationKeys.OpenPlaylist], "1"))
+    logger.LogDebug("Should open new Playlist (configuration): '{OpenPlaylist}'", configuration[ConfigurationKeys.OpenPlaylist]);
+
+    if (!playlist.Opened && string.Equals(configuration[ConfigurationKeys.OpenPlaylist], "1"))
     {
         playlist.Opened = true;
         
         await database.Update(playlist);
 
-        Process.Start(new ProcessStartInfo(configuration[ConfigurationKeys.BrowserPath], playlist.FirstVideoUrl));
+        string? browserPath = configuration[ConfigurationKeys.BrowserPath];
+
+        if (string.IsNullOrWhiteSpace(browserPath) || !File.Exists(browserPath))
+        {
+            logger.LogDebug("No browser path provided in configuration, finishing.");
+            return;
+        }
+
+        Process.Start(new ProcessStartInfo(browserPath, playlist.FirstVideoUrl));
     }
 }

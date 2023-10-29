@@ -1,18 +1,19 @@
 ﻿using AutoYoutubePlaylist.Logic.Features.Chrono.Providers;
+using AutoYoutubePlaylist.Logic.Features.Formatting;
 
 namespace AutoYoutubePlaylist.Logic.Features.YouTube.Providers
 {
-    public class TodaysYouTubePlaylistNameProvider
-        : ITodaysYouTubePlaylistNameProvider
+    public class TodayYouTubePlaylistNameProvider
+        : ITodayYouTubePlaylistNameProvider
     {
         private readonly IDateTimeProvider _dateTimeProvider;
 
-        public TodaysYouTubePlaylistNameProvider(IDateTimeProvider dateTimeProvider)
+        public TodayYouTubePlaylistNameProvider(IDateTimeProvider dateTimeProvider)
         {
             _dateTimeProvider = dateTimeProvider ?? throw new ArgumentNullException(nameof(dateTimeProvider));
         }
 
-        public string IdentyfingPart
+        public string IdentifyingPart
         {
             get
             {
@@ -22,7 +23,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Providers
 
         public string GetName()
         {
-            return IdentyfingPart + _dateTimeProvider.Now.ToString("yyyy-MM-dd");
+            return IdentifyingPart + _dateTimeProvider.Now.ToString(Formats.ShortDateFormat);
         }
     }
 }

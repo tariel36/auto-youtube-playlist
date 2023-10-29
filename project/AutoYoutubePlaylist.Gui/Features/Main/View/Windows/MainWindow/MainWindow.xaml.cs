@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -10,15 +9,14 @@ using AutoYoutubePlaylist.Gui.Features.Data.Models;
 using AutoYoutubePlaylist.Logic.Features.Chrono.Providers;
 using AutoYoutubePlaylist.Logic.Features.Database.Models;
 using AutoYoutubePlaylist.Logic.Features.Database.Services;
+using AutoYoutubePlaylist.Logic.Features.Extensions;
 using AutoYoutubePlaylist.Logic.Features.YouTube.Models;
+using AutoYoutubePlaylist.Logic.Features.YouTube.Urls;
 using Newtonsoft.Json;
 
-namespace AutoYoutubePlaylist.Gui
+namespace AutoYoutubePlaylist.Gui.Features.Main.View.Windows.MainWindow
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
         private readonly IDatabaseService _databaseService;
 
@@ -26,20 +24,22 @@ namespace AutoYoutubePlaylist.Gui
         {
             InitializeComponent();
 
-            _databaseService = new DatabaseService(Features.EntryPoint.App.Configuration, new DateTimeProvider());
+            _databaseService = new DatabaseService(EntryPoint.App.Configuration, new DateTimeProvider());
         }
 
         private async void BtnAddChannels_Click(object sender, RoutedEventArgs args)
         {
-            ICollection<string> urls = TbxChannels.Text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
+            ICollection<string> possibleUrls = TbxChannels.Text.GetLines()
+                .WhereNot(string.IsNullOrWhiteSpace)
                 .ToList();
 
-            HashSet<string> existingUrls = (await _databaseService.GetAll<YouTubeRssUrl>()).Select(x => x.Url).ToHashSet();
+            HashSet<string> existingUrls = (await _databaseService.GetAll<YouTubeRssUrl>())
+                .Select(x => x.Url)
+                .ToHashSet();
 
-            foreach (string url in urls)
+            foreach (string possibleUrl in possibleUrls)
             {
-                string actualUrl = url.StartsWith("http") ? url : $"https://www.youtube.com/feeds/videos.xml?channel_id={url}";
+                string actualUrl = YouTubeRssUrlFactory.GetUrl(possibleUrl);
 
                 if (existingUrls.Contains(actualUrl))
                 {
@@ -85,14 +85,17 @@ namespace AutoYoutubePlaylist.Gui
 
         private async Task RefreshData<TModel>(DataGrid dgr, Label lbl) where TModel : IDatabaseEntity
         {
-            dgr.ItemsSource = new ObservableCollection<DataItem>((await _databaseService.GetAll<TModel>()).Select(x => new DataItem(JsonConvert.SerializeObject(x), x.Id, x.Added) { Value = x is YouTubeRssUrl rss ? rss.Url : null }).ToList());
+            dgr.ItemsSource = new ObservableCollection<DataItem>((await _databaseService.GetAll<TModel>())
+                .Select(x => new DataItem(JsonConvert.SerializeObject(x), x.Id, x.Added) { Value = x is YouTubeRssUrl rss ? rss.Url : null })
+                .ToList());
+
             lbl.Content = (dgr.ItemsSource as ICollection)?.Count ?? 0;
         }
 
-        private async Task DeleteData<TType>(RoutedEventArgs args, DataGrid dgr)
+        private async Task DeleteData<TType>(RoutedEventArgs? args, DataGrid dgr)
             where TType : IDatabaseEntity
         {
-            if (!((args.Source as Button)?.DataContext is DataItem dataItem))
+            if (args?.Source is not Button { DataContext: DataItem dataItem })
             {
                 return;
             }

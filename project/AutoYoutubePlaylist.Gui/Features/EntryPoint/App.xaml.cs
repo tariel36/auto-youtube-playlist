@@ -4,18 +4,17 @@ using Microsoft.Extensions.Configuration;
 
 namespace AutoYoutubePlaylist.Gui.Features.EntryPoint
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
-    public partial class App : Application
+    public partial class App
     {
-        public static IConfiguration Configuration { get; private set; } 
+        private const string ConfigurationFileName = "appsettings.json";
+
+        public static IConfiguration Configuration { get; private set; } = null!;
 
         public void Application_Startup(object sender, StartupEventArgs args)
         {
             Configuration = new ConfigurationBuilder()
               .SetBasePath(Directory.GetCurrentDirectory())
-              .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+              .AddJsonFile(ConfigurationFileName, optional: false, reloadOnChange: true)
               .Build();
         }
     }
