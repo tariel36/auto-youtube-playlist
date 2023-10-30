@@ -1,4 +1,5 @@
-﻿using AutoYoutubePlaylist.Logic.Features.Chrono.Providers;
+﻿using System.Text.RegularExpressions;
+using AutoYoutubePlaylist.Logic.Features.Chrono.Providers;
 using AutoYoutubePlaylist.Logic.Features.Configuration;
 using AutoYoutubePlaylist.Logic.Features.Database.Services;
 using AutoYoutubePlaylist.Logic.Features.Extensions;
@@ -7,6 +8,7 @@ using AutoYoutubePlaylist.Logic.Features.YouTube.Providers;
 using CodeHollow.FeedReader;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
+using Google.Apis.Util;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
 using Microsoft.Extensions.Configuration;
@@ -22,6 +24,8 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly ILogger _logger;
         private readonly ITodayYouTubePlaylistNameProvider _playListNameProvider;
+
+        private static readonly Regex PtTimeFormatRegex = new ("PT((<min>\\d)M)?((<sec>\\d)S)?", RegexOptions.Compiled);
 
         public YouTubeService(ILogger<YouTubeService> logger, ITodayYouTubePlaylistNameProvider playListNameProvider, IConfiguration configuration, IDatabaseService databaseService, IDateTimeProvider dateTimeProvider)
         {
@@ -83,6 +87,8 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                 _logger.LogError(ex, "An error occurred when trying to use authorize into Google. Try to change default web browser that has no logged in YT User and try again");
                 throw new InvalidOperationException("An error occurred when trying to use authorize into Google. Try to change default web browser that has no logged in YT User and try again", ex);
             }
+
+            await GetVideosDetails(newVideos, youtubeService);
 
             _logger.LogDebug("Deleting old playlists");
 
@@ -154,6 +160,53 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             _logger.LogDebug("Returning...");
 
             return youtubePlaylist;
+        }
+
+        private static async Task GetVideosDetails(ICollection<YouTubeVideo> newVideos, Google.Apis.YouTube.v3.YouTubeService youtubeService)
+        {
+            HashSet<string> idsToGet = new HashSet<string>(newVideos.Select(x => x.YouTubeId));
+
+            VideoListResponse? response = null;
+
+            Dictionary<string, YouTubeVideo> vidsDict = newVideos.ToDictionary(k => k.YouTubeId);
+
+            do
+            {
+                VideosResource.ListRequest? request = youtubeService.Videos.List("contentDetails");
+                
+                request.Id = new Repeatable<string>(idsToGet);
+                request.MaxResults = 100;
+                request.PageToken = response?.NextPageToken;
+
+                response = await request.ExecuteAsync();
+
+                response.Items.ForEach(x =>
+                {
+                    YouTubeVideo ytVid = vidsDict[x.Id];
+
+                    ytVid.IsShort = IsShort(x);
+
+                    idsToGet.Remove(x.Id);
+                });
+            }
+            while (!string.IsNullOrWhiteSpace(response.NextPageToken) && idsToGet.Count > 0);
+        }
+
+        private static bool IsShort(Video vid)
+        {
+            // We can try to create short URL and ping it. If we receive 200, it's a short; If we receive 303 then it's not; Undefined otherwise.
+            // However, this will probably quickly mark the app as a bot and make our life miserable.
+            // Another approach is to check length of the video or dimensions but it will give false positives, probably.
+            // As of 2023-10-30 there is no official way to identify shorts.
+
+            Match match = PtTimeFormatRegex.Match(vid.ContentDetails?.Duration ?? string.Empty);
+            string sMin = match.Groups["min"].Value;
+            string sSec = match.Groups["sec"].Value;
+
+            int min = int.Parse(sMin);
+            int sec = int.Parse(sSec);
+
+            return TimeSpan.FromSeconds(min * 60 + sec).TotalSeconds < 70;
         }
 
         private static async Task<YouTubeChannel> GetRecentChannelStatus(string channelRssUrl)

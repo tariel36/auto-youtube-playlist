@@ -26,5 +26,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Models
         public DateTime? PublishDate { get; set; }
 
         public DateTime Added { get; set; }
+
+        public bool IsShort { get; set; }
     }
 }
