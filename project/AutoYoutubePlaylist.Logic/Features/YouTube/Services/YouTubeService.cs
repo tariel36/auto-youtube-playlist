@@ -60,7 +60,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                 throw new InvalidOperationException("YouTube secrets file path does not exist. Set proper path to file.");
             }
 
-            await using FileStream stream = new (secretsFilePath, FileMode.Open, FileAccess.Read);
+            await using FileStream stream = new(secretsFilePath, FileMode.Open, FileAccess.Read);
 
             DateTime utcNow = _dateTimeProvider.UtcNow;
             Google.Apis.YouTube.v3.YouTubeService youtubeService;
@@ -104,40 +104,58 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 
                 return null;
             }
-            
+
             _logger.LogDebug("Adding videos to playlist");
 
             foreach (YouTubeVideo video in newVideos)
             {
                 _logger.LogDebug("Processing - '{Link}'", video.Link);
 
-                if (!youtubeErrorOccurred)
+                if (video.IsReleased == true)
                 {
-                    try
+                    if (string.IsNullOrWhiteSpace(video.PlaylistId))
                     {
-                        _logger.LogDebug("Adding video to playlist - '{Link}'", video.Link);
+                        _logger.LogDebug("Video already has playlist id, skipping processing.");
+                        continue;
+                    }
 
-                        await youtubeService.PlaylistItems.Insert(new PlaylistItem()
+                    _logger.LogDebug("Video is released, processing usual way.");
+
+                    if (!youtubeErrorOccurred)
+                    {
+                        try
                         {
-                            Snippet = new PlaylistItemSnippet()
-                            {
-                                PlaylistId = newPlaylist.Id,
-                                ResourceId = new ResourceId()
-                                {
-                                    Kind = "youtube#video",
-                                    VideoId = video.YouTubeId
-                                }
-                            }
-                        }, "snippet").ExecuteAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        youtubeErrorOccurred = true;
-                        _logger.LogError(ex, "YouTube Error - New videos will be added to database, but not to playlist");
-                    }
-                }
+                            _logger.LogDebug("Adding video to playlist - '{Link}'", video.Link);
 
-                _logger.LogDebug("Adding video to database - '{Link}'", video.Link);
+                            await youtubeService.PlaylistItems.Insert(new PlaylistItem()
+                            {
+                                Snippet = new PlaylistItemSnippet()
+                                {
+                                    PlaylistId = newPlaylist.Id,
+                                    ResourceId = new ResourceId()
+                                    {
+                                        Kind = "youtube#video",
+                                        VideoId = video.YouTubeId
+                                    }
+                                }
+                            }, "snippet").ExecuteAsync();
+
+                            video.PlaylistId = newPlaylist.Id;
+                        }
+                        catch (Exception ex)
+                        {
+                            youtubeErrorOccurred = true;
+                            _logger.LogError(ex,
+                                "YouTube Error - New videos will be added to database, but not to playlist");
+                        }
+                    }
+
+                    _logger.LogDebug("Adding video to database - '{Link}'", video.Link);
+                }
+                else
+                {
+                    _logger.LogDebug("Video has not been released yet, so just adding to DB");
+                }
 
                 await _databaseService.Insert(video);
             }
@@ -147,7 +165,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             string playlistUrl = $"https://www.youtube.com/playlist?list={newPlaylist.Id}";
             string firstVideoUrl = $"https://www.youtube.com/watch?v={newVideos.First().YouTubeId}&list={newPlaylist.Id}&index=1";
 
-            YouTubePlaylist youtubePlaylist = new ()
+            YouTubePlaylist youtubePlaylist = new()
             {
                 Url = playlistUrl,
                 CreationDate = utcNow,
@@ -226,10 +244,23 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 
         private async Task<ICollection<YouTubeVideo>> GetNewVideos()
         {
-            ICollection<YouTubeRssUrl> urls = await _databaseService.GetAll<YouTubeRssUrl>();
-            Dictionary<string, YouTubeVideo> existingVideos = (await _databaseService.GetAll<YouTubeVideo>()).ToDictionary(k => k.YouTubeId);
+            List<YouTubeVideo> newVideos = new();
 
-            List<YouTubeVideo> newVideos = new ();
+            ICollection<YouTubeVideo> allVideos = await _databaseService.GetAll<YouTubeVideo>();
+
+            newVideos.AddRange(await GetVideosFromRss(allVideos));
+
+            newVideos.AddRange(allVideos.Where(x => x.Added >= _dateTimeProvider.UtcNow && (x.IsReleased == false || string.IsNullOrWhiteSpace(x.PlaylistId))));
+
+            return newVideos;
+        }
+
+        private async Task<ICollection<YouTubeVideo>> GetVideosFromRss(ICollection<YouTubeVideo> allVideos)
+        {
+            List<YouTubeVideo> newVideos = new();
+
+            ICollection<YouTubeRssUrl> urls = await _databaseService.GetAll<YouTubeRssUrl>();
+            Dictionary<string, YouTubeVideo> existingVideos = allVideos.ToDictionary(k => k.YouTubeId);
 
             foreach (YouTubeRssUrl url in urls)
             {
@@ -261,7 +292,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             }
 
             PlaylistListResponse? response = null;
-            List<Playlist> toDelete = new ();
+            List<Playlist> toDelete = new();
 
             do
             {
@@ -320,6 +351,39 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             }
 
             return (null, youtubeErrorOccurred);
+        }
+
+        private async Task GetVideosDetails(ICollection<YouTubeVideo> newVideos, Google.Apis.YouTube.v3.YouTubeService youtubeService)
+        {
+            HashSet<string> idsToGet = new(newVideos.Select(x => x.YouTubeId));
+
+            VideoListResponse? response = null;
+
+            Dictionary<string, YouTubeVideo> vidsDict = newVideos.ToDictionary(k => k.YouTubeId);
+
+            do
+            {
+                VideosResource.ListRequest? request = youtubeService.Videos.List("contentDetails,liveStreamingDetails");
+
+                request.Id = new Repeatable<string>(idsToGet);
+                request.MaxResults = 100;
+                request.PageToken = response?.NextPageToken;
+
+                response = await request.ExecuteAsync();
+
+                response.Items.ForEach(x =>
+                {
+                    YouTubeVideo ytVid = vidsDict[x.Id];
+
+                    ytVid.IsReleased = x.LiveStreamingDetails == null
+                                       || (x.LiveStreamingDetails.ActualEndTimeDateTimeOffset.HasValue
+                                           && x.LiveStreamingDetails.ActualEndTimeDateTimeOffset.Value.ToUniversalTime()
+                                               .DateTime >= _dateTimeProvider.UtcNow);
+
+                    idsToGet.Remove(x.Id);
+                });
+            }
+            while (!string.IsNullOrWhiteSpace(response.NextPageToken) && idsToGet.Count > 0);
         }
     }
 }
