@@ -25,7 +25,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
         private readonly ILogger _logger;
         private readonly ITodayYouTubePlaylistNameProvider _playListNameProvider;
 
-        private static readonly Regex PtTimeFormatRegex = new ("PT((<min>\\d)M)?((<sec>\\d)S)?", RegexOptions.Compiled);
+        private static readonly Regex PtTimeFormatRegex = new("PT((<min>\\d)M)?((<sec>\\d)S)?", RegexOptions.Compiled);
 
         public YouTubeService(ILogger<YouTubeService> logger, ITodayYouTubePlaylistNameProvider playListNameProvider, IConfiguration configuration, IDatabaseService databaseService, IDateTimeProvider dateTimeProvider)
         {
@@ -180,68 +180,6 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             return youtubePlaylist;
         }
 
-        private static async Task GetVideosDetails(ICollection<YouTubeVideo> newVideos, Google.Apis.YouTube.v3.YouTubeService youtubeService)
-        {
-            HashSet<string> idsToGet = new HashSet<string>(newVideos.Select(x => x.YouTubeId));
-
-            VideoListResponse? response = null;
-
-            Dictionary<string, YouTubeVideo> vidsDict = newVideos.ToDictionary(k => k.YouTubeId);
-
-            do
-            {
-                VideosResource.ListRequest? request = youtubeService.Videos.List("contentDetails");
-                
-                request.Id = new Repeatable<string>(idsToGet);
-                request.MaxResults = 100;
-                request.PageToken = response?.NextPageToken;
-
-                response = await request.ExecuteAsync();
-
-                response.Items.ForEach(x =>
-                {
-                    YouTubeVideo ytVid = vidsDict[x.Id];
-
-                    ytVid.IsShort = IsShort(x);
-
-                    idsToGet.Remove(x.Id);
-                });
-            }
-            while (!string.IsNullOrWhiteSpace(response.NextPageToken) && idsToGet.Count > 0);
-        }
-
-        private static bool IsShort(Video vid)
-        {
-            // We can try to create short URL and ping it. If we receive 200, it's a short; If we receive 303 then it's not; Undefined otherwise.
-            // However, this will probably quickly mark the app as a bot and make our life miserable.
-            // Another approach is to check length of the video or dimensions but it will give false positives, probably.
-            // As of 2023-10-30 there is no official way to identify shorts.
-
-            Match match = PtTimeFormatRegex.Match(vid.ContentDetails?.Duration ?? string.Empty);
-            string sMin = match.Groups["min"].Value;
-            string sSec = match.Groups["sec"].Value;
-
-            int min = int.Parse(sMin);
-            int sec = int.Parse(sSec);
-
-            return TimeSpan.FromSeconds(min * 60 + sec).TotalSeconds < 70;
-        }
-
-        private static async Task<YouTubeChannel> GetRecentChannelStatus(string channelRssUrl)
-        {
-            Feed feed = await FeedReader.ReadAsync(channelRssUrl);
-
-            string channelId = channelRssUrl.Replace("https://www.youtube.com/feeds/videos.xml?channel_id=", string.Empty);
-            string channelLink = $"https://www.youtube.com/channel/{channelId}";
-
-            return new YouTubeChannel(
-                channelId,
-                channelLink,
-                channelRssUrl,
-                feed.Items.Select(x => new YouTubeVideo(x.Id.Replace("yt:video:", string.Empty), x.Link, x.PublishingDate)).ToList()
-            );
-        }
-
         private async Task<ICollection<YouTubeVideo>> GetNewVideos()
         {
             List<YouTubeVideo> newVideos = new();
@@ -375,6 +313,8 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                 {
                     YouTubeVideo ytVid = vidsDict[x.Id];
 
+                    ytVid.IsShort = IsShort(x);
+
                     ytVid.IsReleased = x.LiveStreamingDetails == null
                                        || (x.LiveStreamingDetails.ActualEndTimeDateTimeOffset.HasValue
                                            && x.LiveStreamingDetails.ActualEndTimeDateTimeOffset.Value.ToUniversalTime()
@@ -384,6 +324,38 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                 });
             }
             while (!string.IsNullOrWhiteSpace(response.NextPageToken) && idsToGet.Count > 0);
+        }
+
+        private static bool IsShort(Video vid)
+        {
+            // We can try to create short URL and ping it. If we receive 200, it's a short; If we receive 303 then it's not; Undefined otherwise.
+            // However, this will probably quickly mark the app as a bot and make our life miserable.
+            // Another approach is to check length of the video or dimensions but it will give false positives, probably.
+            // As of 2023-10-30 there is no official way to identify shorts.
+
+            Match match = PtTimeFormatRegex.Match(vid.ContentDetails?.Duration ?? string.Empty);
+            string sMin = match.Groups["min"].Value;
+            string sSec = match.Groups["sec"].Value;
+
+            int min = int.Parse(sMin);
+            int sec = int.Parse(sSec);
+
+            return TimeSpan.FromSeconds(min * 60 + sec).TotalSeconds < 70;
+        }
+
+        private static async Task<YouTubeChannel> GetRecentChannelStatus(string channelRssUrl)
+        {
+            Feed feed = await FeedReader.ReadAsync(channelRssUrl);
+
+            string channelId = channelRssUrl.Replace("https://www.youtube.com/feeds/videos.xml?channel_id=", string.Empty);
+            string channelLink = $"https://www.youtube.com/channel/{channelId}";
+
+            return new YouTubeChannel(
+                channelId,
+                channelLink,
+                channelRssUrl,
+                feed.Items.Select(x => new YouTubeVideo(x.Id.Replace("yt:video:", string.Empty), x.Link, x.PublishingDate)).ToList()
+            );
         }
     }
 }
