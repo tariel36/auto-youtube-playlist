@@ -3,6 +3,7 @@ using AutoYoutubePlaylist.Logic.Features.Chrono.Providers;
 using AutoYoutubePlaylist.Logic.Features.Configuration;
 using AutoYoutubePlaylist.Logic.Features.Database.Services;
 using AutoYoutubePlaylist.Logic.Features.Extensions;
+using AutoYoutubePlaylist.Logic.Features.Ordering;
 using AutoYoutubePlaylist.Logic.Features.YouTube.Models;
 using AutoYoutubePlaylist.Logic.Features.YouTube.Providers;
 using CodeHollow.FeedReader;
@@ -25,7 +26,7 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
         private readonly ILogger _logger;
         private readonly ITodayYouTubePlaylistNameProvider _playListNameProvider;
 
-        private static readonly Regex PtTimeFormatRegex = new("PT((<min>\\d)M)?((<sec>\\d)S)?", RegexOptions.Compiled);
+        private static readonly Regex PtTimeFormatRegex = new("P?((?<YEAR>\\d+)Y)?((?<MONTH>\\d+)M)?((?<DAY>\\d+)D)?T?((?<HOUR>\\d+)H)?((?<MIN>\\d+)M)?((?<SEC>\\d+)S)?", RegexOptions.Compiled);
 
         public YouTubeService(ILogger<YouTubeService> logger, ITodayYouTubePlaylistNameProvider playListNameProvider, IConfiguration configuration, IDatabaseService databaseService, IDateTimeProvider dateTimeProvider)
         {
@@ -107,13 +108,15 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 
             _logger.LogDebug("Adding videos to playlist");
 
+            newVideos = new VideoOrdering(_configuration).GetOrdering(newVideos).ToList();
+
             foreach (YouTubeVideo video in newVideos)
             {
                 _logger.LogDebug("Processing - '{Link}'", video.Link);
 
                 if (video.IsReleased == true)
                 {
-                    if (string.IsNullOrWhiteSpace(video.PlaylistId))
+                    if (!string.IsNullOrWhiteSpace(video.PlaylistId))
                     {
                         _logger.LogDebug("Video already has playlist id, skipping processing.");
                         continue;
@@ -157,7 +160,14 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                     _logger.LogDebug("Video has not been released yet, so just adding to DB");
                 }
 
-                await _databaseService.Insert(video);
+                if (video.Id == default)
+                {
+                    await _databaseService.Insert(video);
+                }
+                else
+                {
+                    await _databaseService.Update(video);
+                }
             }
 
             _logger.LogDebug("Adding playlist to database...");
@@ -334,13 +344,18 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
             // As of 2023-10-30 there is no official way to identify shorts.
 
             Match match = PtTimeFormatRegex.Match(vid.ContentDetails?.Duration ?? string.Empty);
-            string sMin = match.Groups["min"].Value;
-            string sSec = match.Groups["sec"].Value;
+            string sHour = match.Groups["HOUR"].Value;
+            string sMin = match.Groups["MIN"].Value;
+            string sSec = match.Groups["SEC"].Value;
 
-            int min = int.Parse(sMin);
-            int sec = int.Parse(sSec);
+            int.TryParse(sHour, out int hour);
+            int.TryParse(sMin, out int min);
+            int.TryParse(sSec, out int sec);
 
-            return TimeSpan.FromSeconds(min * 60 + sec).TotalSeconds < 70;
+            min += 60 * hour;
+            sec += 60 * min;
+
+            return TimeSpan.FromSeconds(sec).TotalSeconds < 70;
         }
 
         private static async Task<YouTubeChannel> GetRecentChannelStatus(string channelRssUrl)
@@ -354,7 +369,12 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
                 channelId,
                 channelLink,
                 channelRssUrl,
-                feed.Items.Select(x => new YouTubeVideo(x.Id.Replace("yt:video:", string.Empty), x.Link, x.PublishingDate)).ToList()
+                feed.Items.Select(x => new YouTubeVideo(x.Id.Replace("yt:video:", string.Empty), x.Link, x.PublishingDate)
+                {
+                    ChannelId = channelId,
+                    Title = x.Title,
+                    Description = x.Description
+                }).ToList()
             );
         }
     }

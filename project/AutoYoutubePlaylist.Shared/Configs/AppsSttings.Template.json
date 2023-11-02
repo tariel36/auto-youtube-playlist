@@ -11,5 +11,9 @@
   "ClientSecretsFilePath": "",
   "BrowserPath": "",
   "OpenPlaylist": "0",
-  "PlaylistOldDays": "7"
+  "PlaylistOldDays": "7",
+  "OrderingRules": [
+    "BASE A-Z",
+    "SHORTS A-Z"
+  ]
 }

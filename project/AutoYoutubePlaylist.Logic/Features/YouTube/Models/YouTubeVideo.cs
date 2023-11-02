@@ -32,5 +32,11 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Models
         public bool? IsReleased { get; set; }
 
         public string? PlaylistId { get; set; }
+
+        public string? ChannelId { get; set; }
+        
+        public string? Title { get; set; }
+
+        public string? Description { get; set; }
     }
 }
