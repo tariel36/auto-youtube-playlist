@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Linq;
+using System.Text.RegularExpressions;
 using AutoYoutubePlaylist.Logic.Features.Chrono.Providers;
 using AutoYoutubePlaylist.Logic.Features.Configuration;
 using AutoYoutubePlaylist.Logic.Features.Database.Services;
@@ -303,37 +304,47 @@ namespace AutoYoutubePlaylist.Logic.Features.YouTube.Services
 
         private async Task GetVideosDetails(ICollection<YouTubeVideo> newVideos, Google.Apis.YouTube.v3.YouTubeService youtubeService)
         {
+            const int maxNumberOfYtItems = 50;
+
             HashSet<string> idsToGet = new(newVideos.Select(x => x.YouTubeId));
 
             VideoListResponse? response = null;
 
             Dictionary<string, YouTubeVideo> vidsDict = newVideos.ToDictionary(k => k.YouTubeId);
 
-            do
+            foreach (string[] chunkedIds in idsToGet.Chunk(maxNumberOfYtItems))
             {
-                VideosResource.ListRequest? request = youtubeService.Videos.List("contentDetails,liveStreamingDetails");
-
-                request.Id = new Repeatable<string>(idsToGet);
-                request.MaxResults = 100;
-                request.PageToken = response?.NextPageToken;
-
-                response = await request.ExecuteAsync();
-
-                response.Items.ForEach(x =>
+                do
                 {
-                    YouTubeVideo ytVid = vidsDict[x.Id];
+                    VideosResource.ListRequest? request = youtubeService.Videos.List("contentDetails,liveStreamingDetails");
 
-                    ytVid.IsShort = IsShort(x);
+                    request.Id = new Repeatable<string>(chunkedIds);
+                    request.MaxResults = maxNumberOfYtItems;
+                    request.PageToken = response?.NextPageToken;
 
-                    ytVid.IsReleased = x.LiveStreamingDetails == null
-                                       || (x.LiveStreamingDetails.ActualEndTimeDateTimeOffset.HasValue
-                                           && x.LiveStreamingDetails.ActualEndTimeDateTimeOffset.Value.ToUniversalTime()
-                                               .DateTime >= _dateTimeProvider.UtcNow);
+                    response = await request.ExecuteAsync();
 
-                    idsToGet.Remove(x.Id);
-                });
+                    response.Items.ForEach(x =>
+                    {
+                        YouTubeVideo ytVid = vidsDict[x.Id];
+
+                        ytVid.IsShort = IsShort(x);
+
+                        ytVid.IsReleased = x.LiveStreamingDetails == null
+                                           || (x.LiveStreamingDetails.ActualEndTimeDateTimeOffset.HasValue
+                                               && x.LiveStreamingDetails.ActualEndTimeDateTimeOffset.Value.ToUniversalTime()
+                                                   .DateTime >= _dateTimeProvider.UtcNow);
+
+                        idsToGet.Remove(x.Id);
+                    });
+                }
+                while (!string.IsNullOrWhiteSpace(response.NextPageToken) && idsToGet.Count > 0);
             }
-            while (!string.IsNullOrWhiteSpace(response.NextPageToken) && idsToGet.Count > 0);
+
+            if (idsToGet.Count > 0)
+            {
+                throw new InvalidOperationException("Not all videos have been retrieved from youtube. Please check your code.");
+            }
         }
 
         private static bool IsShort(Video vid)

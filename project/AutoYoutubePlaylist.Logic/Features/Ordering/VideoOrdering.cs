@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿using System.Text.RegularExpressions;
 using AutoYoutubePlaylist.Logic.Features.Configuration;
 using AutoYoutubePlaylist.Logic.Features.Extensions;
 using AutoYoutubePlaylist.Logic.Features.YouTube.Models;
@@ -76,28 +71,23 @@ namespace AutoYoutubePlaylist.Logic.Features.Ordering
 
             return result;
         }
-
-        public int KeySelector(YouTubeVideo video)
-        {
-            return 0;
-        }
-
+        
         private class OrderToken
         {
-            public const string AscendingTag = "A-Z";
-            public const string DescendingTag = "Z-A";
+            private const string AscendingTag = "A-Z";
+            private const string DescendingTag = "Z-A";
 
             private static readonly Regex BaseTagRegex = new ("^(?<KIND>BASE)( (?<ORDER>(A-Z)|(Z-A)))?( (?<NO_SHORTS>-SHORTS))?$", RegexOptions.Compiled);
             private static readonly Regex ShortsTagRegex = new ("^(?<KIND>SHORTS)( (?<ORDER>(A-Z)|(Z-A)))?$", RegexOptions.Compiled);
-            private static readonly Regex ChannelTagRegex = new ("^(?<KIND>CHANNEL) (?<ID>.*?) ( (?<ORDER>(A-Z)|(Z-A)))?( (?<NO_SHORTS>-SHORTS))?$", RegexOptions.Compiled);
+            private static readonly Regex ChannelTagRegex = new ("^(?<KIND>CHANNEL) (?<ID>.*?)( (?<ORDER>(A-Z)|(Z-A)))?( (?<NO_SHORTS>-SHORTS))?$", RegexOptions.Compiled);
 
-            public OrderTokenKinds Kind { get; set; }
+            public OrderTokenKinds Kind { get; private init; }
             
-            public bool IsAscending { get; set; }
+            public bool IsAscending { get; private init; }
 
-            public bool ExcludeShorts { get; set; }
+            public bool ExcludeShorts { get; private init; }
 
-            public string? ChannelId { get; set; }
+            public string? ChannelId { get; private init; }
 
             public static OrderToken Create(string line)
             {
